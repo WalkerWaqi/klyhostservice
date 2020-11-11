@@ -1,3 +1,5 @@
+mod config;
+
 use log::{error, info, warn};
 use log4rs;
 
@@ -6,4 +8,5 @@ fn main() {
 
     info!("---------- klyhostservice started ----------");
 
+    println!("{:#?}", *config::CONFIG);
 }

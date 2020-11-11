@@ -1,0 +1,10 @@
+mqtt:
+  url: 'tcp://controllerOtherVIP:1883'
+
+udp:
+  fwd:
+    start: 60000
+    size: 5000
+
+prometheus:
+  url: 'http://controllerOtherVIP:9091/metrics/job/pushgateway/instance/'
