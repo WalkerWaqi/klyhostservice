@@ -1,0 +1,12 @@
+[package]
+name = "klyhostservice"
+version = "0.1.0"
+authors = ["walker"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+clip = "0.1"
+log = "0.4"
+log4rs = "0.13"
