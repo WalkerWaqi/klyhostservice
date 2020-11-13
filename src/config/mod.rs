@@ -5,38 +5,38 @@ use std::fs::File;
 use std::io::prelude::*;
 
 lazy_static! {
-    pub static ref CONFIG: config = load("config/kly.yaml");
+    pub static ref CONFIG: Config = load("config/kly.yaml");
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
-pub struct config {
-    mqtt: mqtt,
-    udp: udp,
-    prometheus: prometheus,
+pub struct Config {
+    pub mqtt: Mqtt,
+    udp: Udp,
+    prometheus: Prometheus,
 }
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
-struct mqtt {
-    url: String,
+pub struct Mqtt {
+    pub url: String,
 }
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
-struct fwd {
+pub struct Fwd {
     start: u16,
     size: u16,
 }
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
-struct udp {
-    fwd: fwd,
+pub struct Udp {
+    fwd: Fwd,
 }
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
-struct prometheus {
+pub struct Prometheus {
     url: String,
 }
 
-pub fn load(file: &str) -> config {
+pub fn load(file: &str) -> Config {
     let mut f = File::open(file).unwrap();
     let mut s = String::new();
     f.read_to_string(&mut s).unwrap();
 
-    let res: Result<config, _> = serde_yaml::from_str(&s);
+    let res: Result<Config, _> = serde_yaml::from_str(&s);
     res.unwrap()
 }
