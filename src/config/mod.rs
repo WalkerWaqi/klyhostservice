@@ -5,7 +5,7 @@ use std::fs::File;
 use std::io::prelude::*;
 
 lazy_static! {
-    pub static ref CONFIG: Config = load("config/kly.yaml");
+    pub static ref CONFIG: Config = Config::new("config/kly.yaml");
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
@@ -32,11 +32,13 @@ pub struct Prometheus {
     url: String,
 }
 
-pub fn load(file: &str) -> Config {
-    let mut f = File::open(file).unwrap();
-    let mut s = String::new();
-    f.read_to_string(&mut s).unwrap();
-
-    let res: Result<Config, _> = serde_yaml::from_str(&s);
-    res.unwrap()
+impl Config {
+    pub fn new(file: &str) -> Config {
+        let mut f = File::open(file).unwrap();
+        let mut s = String::new();
+        f.read_to_string(&mut s).unwrap();
+    
+        let res: Result<Config, _> = serde_yaml::from_str(&s);
+        res.unwrap()
+    }
 }

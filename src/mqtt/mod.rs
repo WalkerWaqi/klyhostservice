@@ -2,16 +2,17 @@ use super::config;
 use futures::{stream::StreamExt, Stream};
 use log::{error, info};
 use paho_mqtt as mqtt;
+use std::sync::{Arc, Mutex};
 use std::{error::Error, pin::Pin, process, time::Duration};
 
 const TOPICS: &[&str] = &["test", "hello"];
 const QOS: &[i32] = &[mqtt::QOS_2, mqtt::QOS_2];
 
-struct Mqtt {
-    cli: mqtt::AsyncClient,
-    strm: Pin<Box<dyn Stream<Item = Option<mqtt::Message>>>>,
+pub struct Mqtt {
+    pub cli: mqtt::AsyncClient,
 }
 
+#[allow(dead_code)]
 impl Mqtt {
     fn new(url: &str) -> Mqtt {
         let create_opts = mqtt::CreateOptionsBuilder::new()
@@ -19,18 +20,20 @@ impl Mqtt {
             .client_id("klyhostservice_subscribe")
             .finalize();
 
-        let mut cli = mqtt::AsyncClient::new(create_opts).unwrap_or_else(|err| {
-            println!("Error creating the client: {:?}", err);
-            process::exit(1);
-        });
-
         Mqtt {
-            strm: Box::pin(cli.get_stream(25)),
-            cli,
+            cli: mqtt::AsyncClient::new(create_opts).unwrap_or_else(|err| {
+                println!("Error creating the client: {:?}", err);
+                process::exit(1);
+            }),
         }
     }
 
-    async fn connect(&mut self, will_topic: &str, will_payload: &str, qos: i32) -> Result<(), Box<dyn Error>> {
+    async fn connect(
+        &self,
+        will_topic: &str,
+        will_payload: &str,
+        qos: i32,
+    ) -> Result<(), Box<dyn Error>> {
         let lwt = mqtt::Message::new(will_topic, will_payload, qos);
         let conn_opts = mqtt::ConnectOptionsBuilder::new()
             .keep_alive_interval(Duration::from_secs(20))
@@ -44,26 +47,65 @@ impl Mqtt {
         Ok(())
     }
 
-    async fn subscribe(&mut self, topic: &str, qos: i32) -> Result<(), Box<dyn Error>> {
+    async fn subscribe(&self, topic: &str, qos: i32) -> Result<(), Box<dyn Error>> {
         self.cli.subscribe(topic, qos).await?;
 
         Ok(())
     }
 
-    async fn subscribe_many(&mut self, topics: &[&str], qos: &[i32]) -> Result<(), Box<dyn Error>> {
+    async fn subscribe_many(&self, topics: &[&str], qos: &[i32]) -> Result<(), Box<dyn Error>> {
         self.cli.subscribe_many(topics, qos).await?;
 
         Ok(())
     }
 
-    async fn receive(&mut self) -> Result<(), Box<dyn Error>> {
-        while let Some(msg_opt) = self.strm.next().await {
+    async fn unsubscribe(&self, topic: &str) -> Result<(), Box<dyn Error>> {
+        self.cli.unsubscribe(topic).await?;
+
+        Ok(())
+    }
+
+    async fn unsubscribe_many(&self, topics: &[&str]) -> Result<(), Box<dyn Error>> {
+        self.cli.unsubscribe_many(topics).await?;
+
+        Ok(())
+    }
+
+    pub fn get_instance() -> Arc<Mutex<Mqtt>> {
+        static mut POINT: Option<Arc<Mutex<Mqtt>>> = None;
+
+        unsafe {
+            POINT
+                .get_or_insert_with(|| Arc::new(Mutex::new(Mqtt::new(&config::CONFIG.mqtt.url))))
+                .clone()
+        }
+    }
+
+    pub async fn start() -> Result<(), Box<dyn Error>> {
+        let mut strm: Pin<Box<dyn Stream<Item = Option<mqtt::Message>>>>;
+        {
+            let mqtt = Mqtt::get_instance();
+            let mut mqtt = mqtt.lock().unwrap();
+
+            info!("Connecting to the MQTT server...");
+            mqtt.connect("test", "Async subscriber lost connection", mqtt::QOS_2)
+                .await?;
+
+            info!("Subscribing to topics: {:?}", TOPICS);
+            mqtt.subscribe_many(TOPICS, QOS).await?;
+
+            info!("Waiting for messages...");
+            strm = Box::pin(mqtt.cli.get_stream(25));
+        }
+        while let Some(msg_opt) = strm.next().await {
             if let Some(msg) = msg_opt {
                 info!("{}", msg);
             } else {
                 // A "None" means we were disconnected. Try to reconnect...
                 info!("Lost connection. Attempting reconnect.");
-                while let Err(err) = self.cli.reconnect().await {
+                let mqtt = Mqtt::get_instance();
+                let mqtt = mqtt.lock().unwrap();
+                while let Err(err) = mqtt.cli.reconnect().await {
                     error!("Error reconnecting: {}", err);
                     // For tokio use: tokio::time::delay_for()
                     async_std::task::sleep(Duration::from_millis(1000)).await;
@@ -73,20 +115,4 @@ impl Mqtt {
 
         Ok(())
     }
-}
-
-pub async fn start() -> Result<(), Box<dyn Error>> {
-    let mut mqtt = Mqtt::new(&config::CONFIG.mqtt.url);
-
-    info!("Connecting to the MQTT server...");
-    mqtt.connect("test", "Async subscriber lost connection", mqtt::QOS_2).await?;
-
-    info!("Subscribing to topics: {:?}", TOPICS);
-    mqtt.subscribe_many(TOPICS, QOS).await?;
-    mqtt.subscribe("abc", mqtt::QOS_2).await?;
-
-    info!("Waiting for messages...");
-    mqtt.receive().await?;
-
-    Ok(())
 }
