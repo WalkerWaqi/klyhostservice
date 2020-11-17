@@ -1,7 +1,6 @@
 mod config;
 mod mqtt;
 
-use futures::executor::block_on;
 use log::info;
 use log4rs;
 use mqtt::*;
@@ -17,16 +16,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
     info!("{:#?}", *config::CONFIG);
 
     tokio::spawn(async {
-        thread::sleep(Duration::from_secs(3));
-
-        let _: Result<(), Box<dyn Error>> = block_on(async {
-            let mqtt = Mqtt::get_instance();
-            let mqtt = mqtt.lock().unwrap();
-
-            mqtt.publish("test", "hello", 2).await?;
-
-            Ok(())
-        });
+        thread::sleep(Duration::from_secs(1));
+        let _ = mqtt::Mqtt::publish_async("test", "111", 2);
+        // thread::sleep(Duration::from_secs(1));
+        let _ = mqtt::Mqtt::publish_block("test", "222", 2);
     });
 
     Mqtt::start().await?;

@@ -1,5 +1,5 @@
 use super::config;
-use futures::{stream::StreamExt, Stream};
+use futures::{executor::block_on, stream::StreamExt, Stream};
 use log::{error, info};
 use paho_mqtt as mqtt;
 use std::sync::{Arc, Mutex};
@@ -81,6 +81,33 @@ impl Mqtt {
         self.cli.publish(msg).await?;
 
         Ok(())
+    }
+
+    pub fn publish_async(topic: &str, payload: &str, qos: i32) -> Result<(), Box<dyn Error>> {
+        let topic = topic.to_string();
+        let payload = payload.to_string();
+        let qos = qos;
+        tokio::spawn(async move {
+            let _: Result<(), Box<dyn Error>> = block_on(async {
+                let mqtt = Mqtt::get_instance();
+                let mqtt = mqtt.lock().unwrap();
+                mqtt.publish(topic.as_ref(), payload.as_ref(), qos).await?;
+                Ok(())
+            });
+        });
+
+        Ok(())
+    }
+
+    pub fn publish_block(topic: &str, payload: &str, qos: i32) -> Result<(), Box<dyn Error>> {
+        block_on(async {
+            let mqtt = Mqtt::get_instance();
+            let mqtt = mqtt.lock().unwrap();
+
+            mqtt.publish(topic, payload, qos).await?;
+
+            Ok(())
+        })
     }
 
     pub fn get_instance() -> Arc<Mutex<Mqtt>> {
