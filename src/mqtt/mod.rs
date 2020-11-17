@@ -71,6 +71,18 @@ impl Mqtt {
         Ok(())
     }
 
+    pub async fn publish(
+        &self,
+        topic: &str,
+        payload: &str,
+        qos: i32,
+    ) -> Result<(), Box<dyn Error>> {
+        let msg = paho_mqtt::Message::new(topic, payload, qos);
+        self.cli.publish(msg).await?;
+
+        Ok(())
+    }
+
     pub fn get_instance() -> Arc<Mutex<Mqtt>> {
         static mut POINT: Option<Arc<Mutex<Mqtt>>> = None;
 
