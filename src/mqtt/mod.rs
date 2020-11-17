@@ -155,3 +155,15 @@ impl Mqtt {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn notihing() {
+        tokio::spawn(async {
+            let _ = super::Mqtt::publish_async("test", "111", 2);
+            // thread::sleep(Duration::from_secs(1));
+            let _ = super::Mqtt::publish_block("test", "222", 2);
+        });
+    }
+}
