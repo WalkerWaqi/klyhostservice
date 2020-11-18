@@ -3,7 +3,7 @@ mod mqtt;
 
 use log::info;
 use log4rs;
-use mqtt::*;
+use mqtt::Mqtt;
 use std::error::Error;
 
 #[tokio::main]
