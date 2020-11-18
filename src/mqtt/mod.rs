@@ -2,8 +2,9 @@ use super::config;
 use futures::{executor::block_on, stream::StreamExt, Stream};
 use log::{error, info};
 use paho_mqtt as mqtt;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use std::{error::Error, pin::Pin, process, time::Duration};
+use tokio::sync::Mutex;
 
 const TOPICS: &[&str] = &["test", "hello"];
 const QOS: &[i32] = &[mqtt::QOS_2, mqtt::QOS_2];
@@ -83,6 +84,13 @@ impl Mqtt {
         Ok(())
     }
 
+    pub async fn publish_async(topic: &str, payload: &str, qos: i32) -> Result<(), Box<dyn Error>> {
+        let mqtt = Mqtt::get_instance();
+        let mqtt = mqtt.lock().await;
+        mqtt.publish(topic, payload, qos).await?;
+        Ok(())
+    }
+
     pub fn publish_nonblock(topic: &str, payload: &str, qos: i32) -> Result<(), Box<dyn Error>> {
         let topic = topic.to_string();
         let payload = payload.to_string();
@@ -90,7 +98,7 @@ impl Mqtt {
         tokio::spawn(async move {
             let _: Result<(), Box<dyn Error>> = block_on(async {
                 let mqtt = Mqtt::get_instance();
-                let mqtt = mqtt.lock().unwrap();
+                let mqtt = mqtt.lock().await;
                 mqtt.publish(topic.as_ref(), payload.as_ref(), qos).await?;
                 Ok(())
             });
@@ -102,7 +110,7 @@ impl Mqtt {
     pub fn publish_block(topic: &str, payload: &str, qos: i32) -> Result<(), Box<dyn Error>> {
         block_on(async {
             let mqtt = Mqtt::get_instance();
-            let mqtt = mqtt.lock().unwrap();
+            let mqtt = mqtt.lock().await;
 
             mqtt.publish(topic, payload, qos).await?;
 
@@ -124,7 +132,7 @@ impl Mqtt {
         let mut strm: Pin<Box<dyn Stream<Item = Option<mqtt::Message>>>>;
         {
             let mqtt = Mqtt::get_instance();
-            let mut mqtt = mqtt.lock().unwrap();
+            let mut mqtt = mqtt.lock().await;
 
             info!("Connecting to the MQTT server...");
             mqtt.connect("test", "Async subscriber lost connection", mqtt::QOS_2)
@@ -143,7 +151,7 @@ impl Mqtt {
                 // A "None" means we were disconnected. Try to reconnect...
                 info!("Lost connection. Attempting reconnect.");
                 let mqtt = Mqtt::get_instance();
-                let mqtt = mqtt.lock().unwrap();
+                let mqtt = mqtt.lock().await;
                 while let Err(err) = mqtt.cli.reconnect().await {
                     error!("Error reconnecting: {}", err);
                     // For tokio use: tokio::time::delay_for()
