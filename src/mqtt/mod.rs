@@ -83,7 +83,7 @@ impl Mqtt {
         Ok(())
     }
 
-    pub fn publish_async(topic: &str, payload: &str, qos: i32) -> Result<(), Box<dyn Error>> {
+    pub fn publish_nonblock(topic: &str, payload: &str, qos: i32) -> Result<(), Box<dyn Error>> {
         let topic = topic.to_string();
         let payload = payload.to_string();
         let qos = qos;
@@ -161,7 +161,7 @@ mod tests {
     #[test]
     fn notihing() {
         tokio::spawn(async {
-            let _ = super::Mqtt::publish_async("test", "111", 2);
+            let _ = super::Mqtt::publish_nonblock("test", "111", 2);
             // thread::sleep(Duration::from_secs(1));
             let _ = super::Mqtt::publish_block("test", "222", 2);
         });
