@@ -1,5 +1,6 @@
 mod config;
 mod mqtt;
+mod unixsocket;
 
 use log::info;
 use log4rs;

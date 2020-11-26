@@ -9,6 +9,7 @@ use tokio::sync::Mutex;
 const TOPICS: &[&str] = &["test", "hello"];
 const QOS: &[i32] = &[mqtt::QOS_2, mqtt::QOS_2];
 
+#[allow(dead_code)]
 pub struct Mqtt {
     pub cli: mqtt::AsyncClient,
 }
