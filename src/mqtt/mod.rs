@@ -97,12 +97,9 @@ impl Mqtt {
         let payload = payload.to_string();
         let qos = qos;
         tokio::spawn(async move {
-            let _: Result<(), Box<dyn Error>> = block_on(async {
-                let mqtt = Mqtt::get_instance();
-                let mqtt = mqtt.lock().await;
-                mqtt.publish(topic.as_ref(), payload.as_ref(), qos).await?;
-                Ok(())
-            });
+            if let Err(e) = Self::publish_async(topic.as_ref(), payload.as_ref(), qos).await{
+                error!("an error occurred; error = {:?}", e);
+            }
         });
 
         Ok(())
