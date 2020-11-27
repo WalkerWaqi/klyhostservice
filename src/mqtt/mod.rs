@@ -107,10 +107,7 @@ impl Mqtt {
 
     pub fn publish_block(topic: &str, payload: &str, qos: i32) -> Result<(), Box<dyn Error>> {
         block_on(async {
-            let mqtt = Mqtt::get_instance();
-            let mqtt = mqtt.lock().await;
-
-            mqtt.publish(topic, payload, qos).await?;
+            Self::publish_async(topic, payload, qos).await?;
 
             Ok(())
         })
