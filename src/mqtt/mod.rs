@@ -86,7 +86,7 @@ impl Mqtt {
     }
 
     pub async fn publish_async(topic: &str, payload: &str, qos: i32) -> Result<(), Box<dyn Error>> {
-        let mqtt = Mqtt::get_instance();
+        let mqtt = Self::get_instance();
         let mqtt = mqtt.lock().await;
         mqtt.publish(topic, payload, qos).await?;
         Ok(())
@@ -97,7 +97,7 @@ impl Mqtt {
         let payload = payload.to_string();
         let qos = qos;
         tokio::spawn(async move {
-            if let Err(e) = Self::publish_async(topic.as_ref(), payload.as_ref(), qos).await{
+            if let Err(e) = Self::publish_async(topic.as_ref(), payload.as_ref(), qos).await {
                 error!("an error occurred; error = {:?}", e);
             }
         });
@@ -126,7 +126,7 @@ impl Mqtt {
     pub async fn start() -> Result<(), Box<dyn Error>> {
         let mut strm: Pin<Box<dyn Stream<Item = Option<mqtt::Message>>>>;
         {
-            let mqtt = Mqtt::get_instance();
+            let mqtt = Self::get_instance();
             let mut mqtt = mqtt.lock().await;
 
             info!("Connecting to the MQTT server...");
@@ -145,7 +145,7 @@ impl Mqtt {
             } else {
                 // A "None" means we were disconnected. Try to reconnect...
                 info!("Lost connection. Attempting reconnect.");
-                let mqtt = Mqtt::get_instance();
+                let mqtt = Self::get_instance();
                 let mqtt = mqtt.lock().await;
                 while let Err(err) = mqtt.cli.reconnect().await {
                     error!("Error reconnecting: {}", err);
