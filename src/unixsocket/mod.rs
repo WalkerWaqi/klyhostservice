@@ -38,8 +38,8 @@ impl UnixSocket {
         }
     }
 
-    async fn send(&mut self, path: String, message: &str) -> Result<(), Box<dyn Error>> {
-        if let Some(guest) = self.guests.get(&path) {
+    async fn send(&mut self, path: &str, message: &str) -> Result<(), Box<dyn Error>> {
+        if let Some(guest) = self.guests.get(path) {
             guest.send(message.into())?;
         } else {
             error!("error path {}", path);
@@ -51,7 +51,7 @@ impl UnixSocket {
     pub async fn run(&self, path: String) -> Result<(), Box<dyn Error>> {
         let stream = UnixStream::connect(Path::new(&path)).await?;
         tokio::spawn(async move {
-            info!("connection");
+            info!("connection to {}", path);
             if let Err(e) = Self::process(stream, path).await {
                 error!("an error occurred; error = {:?}", e);
             }
@@ -64,20 +64,18 @@ impl UnixSocket {
         let lines = Framed::new(stream, LinesCodec::new());
 
         // Register our peer with state which internally sets up some channels.
-        let mut guest = Guest::new(Self::get_instance(), lines, path.clone()).await?;
+        let mut guest = Guest::new(Self::get_instance(), lines).await?;
 
         // Process incoming messages until our stream is exhausted by a disconnect.
         while let Some(result) = guest.next().await {
             match result {
-                // A message was received from the current user, we should
-                // broadcast this message to the other users.
+                // A message send to peer
                 Ok(Message::Send(msg)) => {
                     guest.lines.send(&msg).await?;
                 }
-                // A message was received from a peer. Send it to the
-                // current user.
+                // A message was received from a peer
                 Ok(Message::Received(msg)) => {
-                    info!("receive data {}", msg);
+                    info!("received from {}: {}", &path, msg);
                 }
                 Err(e) => {
                     error!("error = {:?}", e);
@@ -88,11 +86,7 @@ impl UnixSocket {
         // If this section is reached it means that the client was disconnected!
         // Let's let everyone still connected know about it.
         {
-            Self::get_instance()
-                .lock()
-                .await
-                .guests
-                .remove(&path);
+            Self::get_instance().lock().await.guests.remove(&path);
         }
 
         Ok(())
@@ -147,13 +141,16 @@ impl Guest {
     async fn new(
         state: Arc<Mutex<UnixSocket>>,
         lines: Framed<UnixStream, LinesCodec>,
-        path: String,
     ) -> io::Result<Guest> {
         // Create a channel for this peer
         let (tx, rx) = mpsc::unbounded_channel();
 
         // Add an entry for this `Peer` in the shared state map.
-        state.lock().await.guests.insert(path, tx);
+        if let Some(path) = lines.get_ref().peer_addr()?.as_pathname() {
+            if let Some(path) = path.to_str() {
+                state.lock().await.guests.insert(path.to_string(), tx);
+            }
+        }
 
         Ok(Guest { lines, rx })
     }
