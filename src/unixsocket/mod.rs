@@ -92,7 +92,7 @@ impl UnixSocket {
                 .lock()
                 .await
                 .guests
-                .remove(&path.clone());
+                .remove(&path);
         }
 
         Ok(())
