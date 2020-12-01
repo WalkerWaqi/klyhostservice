@@ -86,6 +86,7 @@ impl UnixSocket {
         // If this section is reached it means that the client was disconnected!
         // Let's let everyone still connected know about it.
         {
+            info!("disconnection from {}", &path);
             Self::get_instance().lock().await.guests.remove(&path);
         }
 

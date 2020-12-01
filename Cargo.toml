@@ -21,6 +21,7 @@ tokio-util = { version = "0.5", features = ["full"] }
 futures = "0.3"
 async-std = "1.7"
 bytes = "0.6"
+protobuf = { version = "2", features = ["with-bytes"] }
 
 [profile.dev]
 opt-level = 0
