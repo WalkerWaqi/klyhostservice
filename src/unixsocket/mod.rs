@@ -162,24 +162,22 @@ impl Guest {
     }
 }
 
-// #[allow(dead_code)]
-// pub struct UnixSocket {
-//     path: String,
-// }
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn nothing() {
+        tokio::spawn(async {
+            let _ = super::UnixSocket::get_instance()
+                .lock()
+                .await
+                .run("/tmp/aaa.sock".to_string())
+                .await;
 
-// #[allow(dead_code)]
-// impl UnixSocket {
-//     pub fn new(path: &str) -> UnixSocket {
-//         UnixSocket {
-//             path: path.to_string(),
-//         }
-//     }
-
-//     pub async fn run(&self) -> Result<(), Box<dyn Error>> {
-//         let stream = UnixStream::connect(Path::new(&self.path)).await?;
-//         let mut lines = Framed::new(stream, LinesCodec::new());
-//         lines.send("hello").await?;
-
-//         Ok(())
-//     }
-// }
+            let _ = super::UnixSocket::get_instance()
+                .lock()
+                .await
+                .send("/tmp/bbb.sock", "hello")
+                .await;
+        });
+    }
+}

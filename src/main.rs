@@ -6,7 +6,6 @@ use log::info;
 use log4rs;
 use mqtt::Mqtt;
 use std::error::Error;
-use unixsocket::UnixSocket;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -14,17 +13,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     info!("---------- klyhostservice started ----------");
     info!("{:#?}", *config::CONFIG);
-
-    let _ = UnixSocket::get_instance()
-        .lock()
-        .await
-        .run("/tmp/aaa.sock".to_string())
-        .await?;
-    let _ = UnixSocket::get_instance()
-        .lock()
-        .await
-        .run("/tmp/bbb.sock".to_string())
-        .await?;
 
     Mqtt::start().await?;
 

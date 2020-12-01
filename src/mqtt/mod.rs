@@ -162,7 +162,7 @@ impl Mqtt {
 #[cfg(test)]
 mod tests {
     #[test]
-    fn notihing() {
+    fn nothing() {
         tokio::spawn(async {
             let _ = super::Mqtt::publish_nonblock("test", "111", 2);
             // thread::sleep(Duration::from_secs(1));
