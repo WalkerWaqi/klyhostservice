@@ -146,11 +146,17 @@ impl Guest {
         let (tx, rx) = mpsc::unbounded_channel();
 
         // Add an entry for this `Peer` in the shared state map.
-        if let Some(path) = lines.get_ref().peer_addr()?.as_pathname() {
-            if let Some(path) = path.to_str() {
-                state.lock().await.guests.insert(path.to_string(), tx);
-            }
-        }
+        state.lock().await.guests.insert(
+            lines
+                .get_ref()
+                .peer_addr()?
+                .as_pathname()
+                .unwrap()
+                .to_str()
+                .unwrap()
+                .to_string(),
+            tx,
+        );
 
         Ok(Guest { lines, rx })
     }
