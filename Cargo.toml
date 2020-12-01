@@ -23,6 +23,10 @@ async-std = "1.7"
 bytes = "0.6"
 protobuf = { version = "2", features = ["with-bytes"] }
 
+[build-dependencies]
+protobuf-codegen-pure = "2"
+protoc-rust = "2"
+
 [profile.dev]
 opt-level = 0
 debug = true

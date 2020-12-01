@@ -1,0 +1,40 @@
+syntax = "proto3";
+package kly;
+
+enum Type {
+  UNKONWN           = 0;
+  // CHANNEL_ADMIN
+  WAKEUP            = 1; // weakup; service <-- guest
+  // CHANNEL_COMMAND
+  MD5               = 2; // get file md5; service --> guest
+  SAVE              = 3; // send file to agent; service --> guest
+  CMD               = 4; // agent run command; service --> guest
+  FILE              = 5;
+  RTP               = 6;
+  NOTICE            = 7;
+  CAMERA_CONNECT    = 8;
+  CAMERA_DISCONNECT = 9;
+  DISK              = 10;
+}
+
+message Packet {
+  Type   type     = 1; // protocol type; keep for ack
+  uint64 code     = 2; // ack error code; NOTICE: time; CAMERA_CONNECT high32 - high low32 - width; CAMERA_CONNECT ack : guest;
+  bytes  data     = 3; // ack : error message; SAVE : file content; CMD : command content; NOTICE: content;
+  string path     = 4; // MD5, SAVE : file path; keep for ack; CMD : path; NOTICE: title; CAMERA_CONNECT : name;
+
+  // Server require
+  string filetype = 5; // return
+
+  // camera
+  uint64 host     = 6; // return
+
+  // disk
+  repeated Disk disks = 7;
+}
+
+message Disk {
+  string name   = 1;
+  uint64 total  = 2;
+  uint64 used   = 3;
+}
