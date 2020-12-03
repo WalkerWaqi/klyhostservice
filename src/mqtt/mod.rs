@@ -16,7 +16,7 @@ pub struct Mqtt {
 
 #[allow(dead_code)]
 impl Mqtt {
-    fn new(url: &str) -> Mqtt {
+    fn new(url: &str) -> Self {
         let create_opts = mqtt::CreateOptionsBuilder::new()
             .server_uri(url)
             .client_id("klyhostservice_subscribe")

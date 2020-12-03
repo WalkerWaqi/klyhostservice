@@ -22,6 +22,8 @@ futures = "0.3"
 async-std = "1.7"
 bytes = "0.6"
 protobuf = { version = "2", features = ["with-bytes"] }
+virt = "0.2"
+libvirt-sys = "1.2"
 
 [build-dependencies]
 protobuf-codegen-pure = "2"
