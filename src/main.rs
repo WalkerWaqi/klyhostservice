@@ -17,7 +17,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     info!("---------- klyhostservice started ----------");
     info!("{:#?}", *config::CONFIG);
 
-    let virt = Virt::new("qemu:///system");
+    let mut virt = Virt::new("qemu:///system\0");
     virt.start();
 
     Mqtt::start().await?;

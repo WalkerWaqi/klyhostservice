@@ -24,6 +24,7 @@ bytes = "0.6"
 protobuf = { version = "2", features = ["with-bytes"] }
 virt = "0.2"
 libvirt-sys = "1.2"
+libc = "0.1"
 
 [build-dependencies]
 protobuf-codegen-pure = "2"
