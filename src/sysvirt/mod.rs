@@ -40,20 +40,42 @@ impl Virt {
 
     pub fn start(&mut self) {
         unsafe {
-            virConnectRegisterCloseCallback(
+            let ret = virConnectSetKeepAlive(self.conn, 5, 3);
+            if ret < 0 {
+                error!("Failed to virConnectSetKeepAlive");
+                process::exit(1);
+            }
+
+            let ret = virConnectRegisterCloseCallback(
                 self.conn,
                 Some(Self::connectClose),
                 self as *mut _ as *mut c_void,
                 None,
             );
+            if ret < 0 {
+                error!("Failed to virConnectRegisterCloseCallback");
+                process::exit(1);
+            }
 
-            let ret = virConnectDomainEventRegister(self.conn, Some(Self::domainEventCallback), ptr::null_mut(), None);
-            if ret == -1 {
+            let ret = virConnectDomainEventRegister(
+                self.conn,
+                Some(Self::domainEventCallback),
+                ptr::null_mut(),
+                None,
+            );
+            if ret < 0 {
                 error!("Failed to virConnectDomainEventRegister");
                 process::exit(1);
             }
 
-            virConnectDomainEventRegisterAny(self.conn, ptr::null_mut(), VIR_DOMAIN_EVENT_ID_REBOOT as i32, Some(Self::domainEventRebootCallback), ptr::null_mut(), None);
+            self.reboot = virConnectDomainEventRegisterAny(
+                self.conn,
+                ptr::null_mut(),
+                VIR_DOMAIN_EVENT_ID_REBOOT as i32,
+                Some(Self::domainEventRebootCallback),
+                ptr::null_mut(),
+                None,
+            );
         }
     }
 
@@ -61,12 +83,22 @@ impl Virt {
         error!("connectClose");
     }
 
-    extern "C" fn domainEventCallback(conn: virConnectPtr, dom: virDomainPtr, event: c_int, detail: c_int, opaque: *mut c_void) -> c_int {
+    extern "C" fn domainEventCallback(
+        conn: virConnectPtr,
+        dom: virDomainPtr,
+        event: c_int,
+        detail: c_int,
+        opaque: *mut c_void,
+    ) -> c_int {
         info!("domainEventCallback");
         0
     }
 
-    extern "C" fn domainEventRebootCallback(conn: virConnectPtr, dom: virDomainPtr, opaque: *mut c_void) -> () {
+    extern "C" fn domainEventRebootCallback(
+        conn: virConnectPtr,
+        dom: virDomainPtr,
+        opaque: *mut c_void,
+    ) -> () {
         info!("domainEventRebootCallback");
     }
 }
