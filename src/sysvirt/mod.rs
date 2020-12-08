@@ -36,7 +36,7 @@ impl Virt {
             }
         }
 
-        Virt { conn, reboot: 0 }
+        Self { conn, reboot: 0 }
     }
 
     pub fn start(&mut self) {

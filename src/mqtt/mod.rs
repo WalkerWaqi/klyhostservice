@@ -22,7 +22,7 @@ impl Mqtt {
             .client_id("klyhostservice_subscribe")
             .finalize();
 
-        Mqtt {
+        Self {
             cli: mqtt::AsyncClient::new(create_opts).unwrap_or_else(|err| {
                 println!("Error creating the client: {:?}", err);
                 process::exit(1);

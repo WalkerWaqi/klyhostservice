@@ -23,7 +23,7 @@ pub struct UnixSocket {
 #[allow(dead_code)]
 impl UnixSocket {
     fn new() -> Self {
-        UnixSocket {
+        Self {
             guests: HashMap::new(),
         }
     }

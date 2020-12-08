@@ -10,7 +10,7 @@ pub struct Virt {
 #[allow(dead_code)]
 impl Virt {
     pub fn new(uri: &str) -> Self {
-        Virt {
+        Self {
             conn: Connect::open(uri).unwrap(),
         }
     }

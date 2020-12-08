@@ -33,12 +33,11 @@ pub struct Prometheus {
 }
 
 impl Config {
-    pub fn new(file: &str) -> Config {
+    pub fn new(file: &str) -> Self {
         let mut f = File::open(file).unwrap();
         let mut s = String::new();
         f.read_to_string(&mut s).unwrap();
-    
-        let res: Result<Config, _> = serde_yaml::from_str(&s);
+        let res: Result<Self, _> = serde_yaml::from_str(&s);
         res.unwrap()
     }
 }
