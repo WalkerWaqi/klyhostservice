@@ -3,6 +3,7 @@ use libvirt_sys::*;
 use log::{error, info};
 use std::process;
 use std::ptr;
+use std::thread;
 
 #[allow(dead_code)]
 pub struct Virt {
@@ -40,12 +41,6 @@ impl Virt {
 
     pub fn start(&mut self) {
         unsafe {
-            let ret = virConnectSetKeepAlive(self.conn, 5, 3);
-            if ret < 0 {
-                error!("Failed to virConnectSetKeepAlive");
-                process::exit(1);
-            }
-
             let ret = virConnectRegisterCloseCallback(
                 self.conn,
                 Some(Self::connectClose),
@@ -68,6 +63,12 @@ impl Virt {
                 process::exit(1);
             }
 
+            let ret = virConnectSetKeepAlive(self.conn, 5, 3);
+            if ret < 0 {
+                error!("Failed to virConnectSetKeepAlive");
+                process::exit(1);
+            }
+
             self.reboot = virConnectDomainEventRegisterAny(
                 self.conn,
                 ptr::null_mut(),
@@ -76,6 +77,14 @@ impl Virt {
                 ptr::null_mut(),
                 None,
             );
+
+            thread::spawn(|| loop {
+                let ret = virEventRunDefaultImpl();
+                if ret < 0 {
+                    error!("Failed to run event loop: {:?}", virGetLastErrorMessage());
+                    process::exit(1);
+                }
+            });
         }
     }
 
