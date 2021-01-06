@@ -8,12 +8,11 @@ use std::pin::Pin;
 use std::sync::Arc;
 use std::task::{Context, Poll};
 use tokio::net::UnixStream;
-use tokio::stream::{Stream, StreamExt};
 use tokio::sync::{mpsc, Mutex};
+use tokio_stream::{Stream, StreamExt};
 use tokio_util::codec::{Framed, LinesCodec, LinesCodecError};
 
 type Tx = mpsc::UnboundedSender<String>;
-type Rx = mpsc::UnboundedReceiver<String>;
 
 #[allow(dead_code)]
 pub struct UnixSocket {
@@ -97,7 +96,7 @@ impl UnixSocket {
 #[allow(dead_code)]
 struct Guest {
     lines: Framed<UnixStream, LinesCodec>,
-    rx: Rx,
+    rx: Pin<Box<dyn Stream<Item = String> + Send>>,
 }
 
 #[derive(Debug)]
@@ -144,7 +143,7 @@ impl Guest {
         lines: Framed<UnixStream, LinesCodec>,
     ) -> io::Result<Guest> {
         // Create a channel for this peer
-        let (tx, rx) = mpsc::unbounded_channel();
+        let (tx, mut rx) = mpsc::unbounded_channel();
 
         // Add an entry for this `Peer` in the shared state map.
         state.lock().await.guests.insert(
@@ -158,6 +157,12 @@ impl Guest {
                 .to_string(),
             tx,
         );
+
+        let rx = Box::pin(async_stream::stream! {
+            while let Some(item) = rx.recv().await {
+                yield item;
+            }
+        });
 
         Ok(Guest { lines, rx })
     }
