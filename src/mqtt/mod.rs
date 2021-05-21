@@ -149,8 +149,8 @@ impl Mqtt {
                 let mqtt = mqtt.lock().await;
                 while let Err(err) = mqtt.cli.reconnect().await {
                     error!("Error reconnecting: {}", err);
-                    // For tokio use: tokio::time::delay_for()
-                    async_std::task::sleep(Duration::from_millis(1000)).await;
+                    tokio::time::sleep(tokio::time::Duration::from_millis(1000)).await;
+                    // async_std::task::sleep(Duration::from_millis(1000)).await;
                 }
             }
         }
