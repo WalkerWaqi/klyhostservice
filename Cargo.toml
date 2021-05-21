@@ -24,7 +24,7 @@ async-stream = "0.3"
 futures = { version = "0.3", features = ["thread-pool"]}
 async-std = "1.8"
 bytes = "1.0"
-protobuf = { version = "2", features = ["with-bytes"] }
+protobuf = { version = "2.0", features = ["with-bytes"] }
 virt = "0.2"
 libvirt-sys = "1.2"
 libc = "0.1"
