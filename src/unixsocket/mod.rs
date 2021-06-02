@@ -1,3 +1,4 @@
+use bytes::BytesMut;
 use futures::SinkExt;
 use log::{error, info};
 use std::collections::HashMap;
@@ -10,9 +11,9 @@ use std::task::{Context, Poll};
 use tokio::net::UnixStream;
 use tokio::sync::{mpsc, Mutex};
 use tokio_stream::{Stream, StreamExt};
-use tokio_util::codec::{Framed, LinesCodec, LinesCodecError};
+use tokio_util::codec::{BytesCodec, Decoder, Framed};
 
-type Tx = mpsc::UnboundedSender<String>;
+type Tx = mpsc::UnboundedSender<BytesMut>;
 
 #[allow(dead_code)]
 pub struct UnixSocket {
@@ -60,7 +61,7 @@ impl UnixSocket {
     }
 
     async fn process(stream: UnixStream, path: String) -> Result<(), Box<dyn Error>> {
-        let lines = Framed::new(stream, LinesCodec::new());
+        let lines = BytesCodec::new().framed(stream);
 
         // Register our peer with state which internally sets up some channels.
         let mut guest = Guest::new(Self::get_instance(), lines).await?;
@@ -70,11 +71,11 @@ impl UnixSocket {
             match result {
                 // A message send to peer
                 Ok(Message::Send(msg)) => {
-                    guest.lines.send(&msg).await?;
+                    guest.lines.send(msg.freeze()).await?;
                 }
                 // A message was received from a peer
                 Ok(Message::Received(msg)) => {
-                    info!("received from {}: {}", &path, msg);
+                    info!("received from {}: {}", &path, msg.len());
                 }
                 Err(e) => {
                     error!("error = {:?}", e);
@@ -95,23 +96,23 @@ impl UnixSocket {
 
 #[allow(dead_code)]
 struct Guest {
-    lines: Framed<UnixStream, LinesCodec>,
-    rx: Pin<Box<dyn Stream<Item = String> + Send>>,
+    lines: Framed<UnixStream, BytesCodec>,
+    rx: Pin<Box<dyn Stream<Item = BytesMut> + Send>>,
 }
 
 #[derive(Debug)]
 enum Message {
     /// A message that should be send
-    Send(String),
+    Send(BytesMut),
 
     /// A message that should be received by a client
-    Received(String),
+    Received(BytesMut),
 }
 
 // Peer implements `Stream` in a way that polls both the `Rx`, and `Framed` types.
 // A message is produced whenever an event is ready until the `Framed` stream returns `None`.
 impl Stream for Guest {
-    type Item = Result<Message, LinesCodecError>;
+    type Item = Result<Message, io::Error>;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         // First poll the `UnboundedReceiver`.
@@ -140,7 +141,7 @@ impl Guest {
     /// Create a new instance of `Peer`.
     async fn new(
         state: Arc<Mutex<UnixSocket>>,
-        lines: Framed<UnixStream, LinesCodec>,
+        lines: Framed<UnixStream, BytesCodec>,
     ) -> io::Result<Guest> {
         // Create a channel for this peer
         let (tx, mut rx) = mpsc::unbounded_channel();
