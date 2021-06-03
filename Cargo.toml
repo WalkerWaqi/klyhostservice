@@ -7,27 +7,28 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-clip = "0.1"
-log = "0.4"
-log4rs = "1.0"
-serde = { version = "1.0", features = ["derive"] }
-serde_yaml = "0.8"
-lazy_static = "1.4"
+clip = "0.*"
+log = "0.*"
+log4rs = "1.*"
+serde = { version = "1.*", features = ["derive"] }
+serde_yaml = "0.*"
+lazy_static = "1.*"
 # paho-mqtt = { git = "https://github.com/eclipse/paho.mqtt.rust", branch = "master" }
-paho-mqtt = "0.9"
-tokio = { version = "1.0", features = ["full", "tracing"] }
-tracing = "0.1"
-tracing-subscriber = { version = "0.2", default-features = false, features = ["fmt", "ansi", "env-filter", "chrono", "tracing-log"] }
-tokio-util = { version = "0.6", features = ["full"] }
-tokio-stream = "0.1"
-async-stream = "0.3"
-futures = { version = "0.3", features = ["thread-pool"]}
-# async-std = "1.8"
-bytes = "1.0"
-protobuf = { version = "2.0", features = ["with-bytes"] }
-virt = "0.2"
-libvirt-sys = "1.2"
+paho-mqtt = "0.*"
+tokio = { version = "1.*", features = ["full", "tracing"] }
+tracing = "0.*"
+tracing-subscriber = { version = "0.*", default-features = false, features = ["fmt", "ansi", "env-filter", "chrono", "tracing-log"] }
+tokio-util = { version = "0.*", features = ["full"] }
+tokio-stream = "0.*"
+async-stream = "0.*"
+futures = { version = "0.*", features = ["thread-pool"]}
+# async-std = "1.*"
+bytes = "1.*"
+protobuf = { version = "2.*", features = ["with-bytes"] }
+virt = "0.*"
+libvirt-sys = "1.*"
 libc = "0.1"
+curl = "0.*"
 
 [build-dependencies]
 protobuf-codegen-pure = "2"
